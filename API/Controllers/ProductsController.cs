@@ -14,9 +14,10 @@ namespace API.Controllers
     {
 
         [HttpGet]
-        public async Task<ActionResult<IReadOnlyList<Product>>> GetProducts(string? brand, string? type, string? sort)
+        public async Task<ActionResult<IReadOnlyList<Product>>> GetProducts([FromQuery]ProductSpecParams productSpecParams)
         {
-            return Ok(await productRepository.GetProductsAsync(brand,type,sort));
+            
+            return Ok(await productRepository.GetProductsAsync(productSpecParams));
         }
 
         [HttpGet("{id:int}")]

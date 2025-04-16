@@ -1,4 +1,5 @@
 ﻿using Core.Entities;
+using Core.RequestHelpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace Core.Interfaces
 {
     public interface IProductRepository
     {
-        Task<IReadOnlyList<Product>> GetProductsAsync(string? brands, string? type, string? sort);
+        Task<Pagination<Product>> GetProductsAsync(ProductSpecParams productSpecParams);
         Task<Product?> GetProductByIdAsync(int id);
         Task<IReadOnlyList<string>> GetBrandsAsync();
         Task<IReadOnlyList<string>> GetTypeAsync();

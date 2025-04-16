@@ -1,5 +1,6 @@
 ﻿using Core.Entities;
 using Core.Interfaces;
+using Core.RequestHelpers;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -33,27 +34,37 @@ namespace Infrastructure.Data
             return await context.Products.FindAsync(id);
         }
 
-        public async Task<IReadOnlyList<Product>> GetProductsAsync(string? brand, string? type, string? sort)
+        public async Task<Pagination<Product>> GetProductsAsync(ProductSpecParams productSpecParams)
         {
             var query = context.Products.AsQueryable();
-            if(!string.IsNullOrWhiteSpace(brand))
+            if(!string.IsNullOrEmpty(productSpecParams.Search))
             {
-                query = query.Where(x => x.Brand == brand);
+                query = query.Where(x => x.Name.ToLower().Contains(productSpecParams.Search));
             }
-            if(!string.IsNullOrWhiteSpace(type))
+            if(productSpecParams.Brands.Count > 0)
             {
-                query = query.Where(x => x.Type == type);
+                query = query.Where(x => productSpecParams.Brands.Contains(x.Brand));
             }
-            if(!string.IsNullOrWhiteSpace(sort))
+            if(productSpecParams.Types.Count > 0)
             {
-                query = sort switch
+                query = query.Where(x => productSpecParams.Types.Contains(x.Type));
+            }
+            if(productSpecParams.sort != null)
+            {
+                query = productSpecParams.sort switch
                 {
                     "priceAsc" => query.OrderBy(x => x.Price),
                     "priceDesc" => query.OrderByDescending(x => x.Price),
                     _ => query.OrderBy(x => x.Name)
                 };
             }
-            return await query.ToListAsync();
+            var products = await query
+                .Skip((productSpecParams.PageIndex - 1) * productSpecParams.PageSize)
+                .Take(productSpecParams.PageSize)
+                .ToListAsync();
+            var count = await query.CountAsync();
+            var pagination = new Pagination<Product>(productSpecParams.PageIndex, productSpecParams.PageSize, count, products);
+            return pagination;
         }
 
         public async Task<IReadOnlyList<string>> GetTypeAsync()
